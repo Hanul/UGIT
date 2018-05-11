@@ -1,6 +1,7 @@
 UGIT.DIFF = METHOD((m) => {
 	
 	let git = require('simple-git');
+	let diffParser = require("git-diff-parser");
 	
 	return {
 		
@@ -8,43 +9,44 @@ UGIT.DIFF = METHOD((m) => {
 			//REQUIRED: path
 			//REQUIRED: callbackOrHandlers
 			//OPTIONAL: callbackOrHandlers.error
-			//OPTIONAL: callbackOrHandlers.success
+			//REQUIRED: callbackOrHandlers.success
 				
 			let errorHandler;
 			let callback;
 			
-			if (callbackOrHandlers !== undefined) {
-				
-				if (CHECK_IS_DATA(callbackOrHandlers) !== true) {
-					callback = callbackOrHandlers;
-				} else {
-					errorHandler = callbackOrHandlers.error;
-					callback = callbackOrHandlers.success;
-				}
+			if (CHECK_IS_DATA(callbackOrHandlers) !== true) {
+				callback = callbackOrHandlers;
+			} else {
+				errorHandler = callbackOrHandlers.error;
+				callback = callbackOrHandlers.success;
 			}
 			
-			git(path).silent(true).add('./*').diffSummary(['origin/master'], (error, diff) => {
-				
-				let newFilePaths = [];
-				let updatedFilePaths = [];
-				let removedFilePaths = [];
-				
-				EACH(diff.files, (info) => {
-					if (info.insertions === 1 && info.deletions === 0) {
-						newFilePaths.push(info.file);
-					} else if (info.insertions === 0 && info.deletions === 1) {
-						removedFilePaths.push(info.file);
-					} else {
-						updatedFilePaths.push(info.file);
-					}
-				});
+			git(path).silent(true).add('./*').diff(['origin/master'], (error, diff) => {
 				
 				if (error !== TO_DELETE) {
 					if (errorHandler !== undefined) {
 						errorHandler(error.toString());
 					}
 				} else if (callback !== undefined) {
-					callback(newFilePaths, updatedFilePaths, removedFilePaths);
+					
+					let newFilePaths = [];
+					let updatedFilePaths = [];
+					let movedFilePaths = [];
+					let removedFilePaths = [];
+					
+					EACH(diffParser(diff).commits[0].files, (info) => {
+						if (info.added === true) {
+							newFilePaths.push(info.name);
+						} else if (info.deleted === true) {
+							removedFilePaths.push(info.name);
+						} else if (info.renamed === true) {
+							movedFilePaths.push(info.name);
+						} else {
+							updatedFilePaths.push(info.name);
+						}
+					});
+					
+					callback(newFilePaths, updatedFilePaths, movedFilePaths, removedFilePaths);
 				}
 			});
 		}
