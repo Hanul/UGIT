@@ -5,6 +5,7 @@ UGIT.CLONE = METHOD((m) => {
 	return {
 		
 		run : (params, callbackOrHandlers) => {
+			//REQUIRED: params
 			//REQUIRED: params.url
 			//REQUIRED: params.path
 			//REQUIRED: params.username
