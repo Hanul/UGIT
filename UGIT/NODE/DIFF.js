@@ -34,17 +34,21 @@ UGIT.DIFF = METHOD((m) => {
 					let movedFilePaths = [];
 					let removedFilePaths = [];
 					
-					EACH(diffParser(diff).commits[0].files, (info) => {
-						if (info.added === true) {
-							newFilePaths.push(info.name);
-						} else if (info.deleted === true) {
-							removedFilePaths.push(info.name);
-						} else if (info.renamed === true) {
-							movedFilePaths.push(info.name);
-						} else {
-							updatedFilePaths.push(info.name);
-						}
-					});
+					let commit = diffParser(diff).commits[0];
+					
+					if (commit !== undefined) {
+						EACH(commit.files, (info) => {
+							if (info.added === true) {
+								newFilePaths.push(info.name);
+							} else if (info.deleted === true) {
+								removedFilePaths.push(info.name);
+							} else if (info.renamed === true) {
+								movedFilePaths.push(info.name);
+							} else {
+								updatedFilePaths.push(info.name);
+							}
+						});
+					}
 					
 					callback(newFilePaths, updatedFilePaths, movedFilePaths, removedFilePaths);
 				}
